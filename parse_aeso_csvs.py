@@ -30,10 +30,11 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 def find_csv_files(base_dir):
     return list(Path(base_dir).rglob("*.csv"))
 
-def extract_timestamp(row4):
-    match = re.search(r"Report Date:\s*(\d{4}-\d{2}-\d{2})\s*Time:\s*(\d{2}:\d{2})", row4)
+def extract_timestamp(row3):
+    match = re.search(r"Last Update\s*:\s*(\w+\s+\d{1,2},\s+\d{4}\s+\d{2}:\d{2})", row3)
     if match:
-        return f"{match.group(1)} {match.group(2)}"
+        dt = datetime.strptime(match.group(1), "%b %d, %Y %H:%M")
+        return dt.strftime("%Y-%m-%d %H:%M")
     return None
 
 def process_csv(filepath):
@@ -43,7 +44,7 @@ def process_csv(filepath):
         if len(reader) < 32:
             return []
 
-        timestamp = extract_timestamp(" ".join(reader[3]))
+        timestamp = extract_timestamp(" ".join(reader[2]))
         if not timestamp:
             return []
 
