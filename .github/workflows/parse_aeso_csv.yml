@@ -8,11 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout your repo
+      - name: Checkout repo
         uses: actions/checkout@v3
-
-      - name: Clone source CSV repo
-        run: git clone https://github.com/intermittentnrg/intermittent-aeso-sns-sqs.git
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -25,10 +22,10 @@ jobs:
       - name: Run parser
         run: python parse_aeso_csvs.py
 
-      - name: Commit and push results
+      - name: Commit output
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add monthly_data
-          git commit -m "Update monthly parsed data" || echo "No changes to commit"
-          git push
+          git add monthly_data || echo "No monthly_data directory found to add."
+          git commit -m "Add updated monthly CSVs" || echo "Nothing to commit"
+          git push || echo "Nothing to push"
