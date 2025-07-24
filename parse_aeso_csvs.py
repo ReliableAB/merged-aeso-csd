@@ -43,7 +43,7 @@ def process_csv(filepath):
         if len(reader) < 32:
             return []
 
-        timestamp = extract_timestamp(reader[3])
+        timestamp = extract_timestamp(" ".join(reader[3]))
         if not timestamp:
             return []
 
