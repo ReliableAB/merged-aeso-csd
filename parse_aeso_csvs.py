@@ -49,9 +49,26 @@ def process_csv(filepath):
             return []
 
         rows = []
-        # Generation types: row 28–31 (index 27–30)
+
+        # Interchange: rows 18–21 (index 17–20)
+        for row in reader[17:21]:
+            if len(row) < 3 or not row[0].strip():
+                continue
+            inter_type = row[0].strip().upper()
+            full_type = f"INTERCHANGE {inter_type}"
+            subtype = SUBTYPE_MAP.get(full_type, 'Interchange')
+            rows.append({
+                'Timestamp': timestamp,
+                'Type': full_type,
+                'SubType': subtype,
+                'MC': '',
+                'TNG': row[1].strip(),
+                'DCR': ''
+            })
+
+        # Generation types: rows 28–31 (index 27–30)
         for row in reader[27:31]:
-            if len(row) < 6:
+            if len(row) < 4 or not row[0].strip():
                 continue
             gen_type = row[0].strip().upper()
             subtype = SUBTYPE_MAP.get(gen_type, '')
@@ -59,27 +76,13 @@ def process_csv(filepath):
                 'Timestamp': timestamp,
                 'Type': gen_type,
                 'SubType': subtype,
-                'MC': row[1],
-                'TNG': row[2],
-                'DCR': row[3]
-            })
-
-        # Interchange rows: row 18–21 (index 17–20)
-        for row in reader[17:21]:
-            if len(row) < 6:
-                continue
-            inter_type = f"INTERCHANGE {row[0].strip().upper()}"
-            subtype = SUBTYPE_MAP.get(inter_type, '')
-            rows.append({
-                'Timestamp': timestamp,
-                'Type': inter_type,
-                'SubType': subtype,
-                'MC': '',
-                'TNG': row[1],
-                'DCR': ''
+                'MC': row[1].strip(),
+                'TNG': row[2].strip(),
+                'DCR': row[3].strip()
             })
 
         return rows
+
     except Exception as e:
         print(f"Error processing {filepath}: {e}")
         return []
