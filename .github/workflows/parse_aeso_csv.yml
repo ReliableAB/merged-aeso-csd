@@ -1,31 +1,36 @@
 name: Parse AESO CSVs
 
 on:
-  workflow_dispatch: # allows manual run
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: "0 0 * * *"  # every day at 00:00 UTC
+  workflow_dispatch:     # allows manual run
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
-      - name: Run parser
+      - name: Install dependencies
+        run: pip install pandas
+
+      - name: Run CSV parsing script
         run: python parse_aeso_csvs.py
 
-      - name: Commit output
+      - name: Commit changes
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add monthly_data.csv
-          git commit -m "Update monthly data" || echo "No changes to commit"
-          git push
+          if [ -f monthly_data.csv ]; then
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
+            git add monthly_data.csv
+            git commit -m "Update monthly_data.csv" || echo "No changes to commit"
+            git push
+          else
+            echo "⚠️ No CSV file generated, skipping commit."
+          fi
