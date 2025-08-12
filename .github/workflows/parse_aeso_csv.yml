@@ -1,23 +1,23 @@
 name: Parse AESO CSVs
 
 on:
-  workflow_dispatch:  # run manually
+  workflow_dispatch: # allows manual run
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
-
-      - name: Install dependencies
-        run: pip install pandas
+          python-version: '3.11'
 
       - name: Run parser
         run: python parse_aeso_csvs.py
@@ -26,6 +26,6 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add monthly_data || echo "No monthly_data directory found to add."
-          git commit -m "Add updated monthly CSVs" || echo "Nothing to commit"
-          git push || echo "Nothing to push"
+          git add monthly_data.csv
+          git commit -m "Update monthly data" || echo "No changes to commit"
+          git push
