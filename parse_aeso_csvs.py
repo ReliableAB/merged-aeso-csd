@@ -21,28 +21,41 @@ FUEL_TYPE_MAP = {
 
 def extract_timestamp_from_csv(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
-        for i in range(4):  # Only scan first 4 lines
+        for i in range(6):  # scan first few lines
             line = f.readline()
             if "Last Update" in line:
                 match = re.search(r"Last Update\s*:\s*(.*)", line)
                 if match:
                     timestamp_str = match.group(1).strip()
                     try:
-                        return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M")
+                        # Match "May 10, 2024 16:19"
+                        return datetime.strptime(timestamp_str, "%b %d, %Y %H:%M")
                     except ValueError:
+                        print(f"Could not parse timestamp in {filepath}: {timestamp_str}")
                         return None
     return None
 
 def extract_generation_rows(filepath, timestamp):
     rows = []
-    df = pd.read_csv(filepath, skiprows=16)  # Skip to the table
-    df = df[df.columns[:3]]  # Only keep first 3 columns: Fuel Type, MC, TNG
+    with open(filepath, "r", encoding="utf-8") as f:
+        content = list(csv.reader(f))
 
+    # Find where generation data starts (look for "GAS" row)
+    start_index = None
+    for idx, row in enumerate(content):
+        if row and row[0].strip().upper() == "GAS":
+            start_index = idx
+            break
+
+    if start_index is None:
+        return rows  # no generation table found
+
+    df = pd.DataFrame(content[start_index:], columns=["Fuel Type", "MC", "TNG"])
     for _, row in df.iterrows():
-        fuel_type = str(row[0]).strip()
+        fuel_type = str(row["Fuel Type"]).strip()
         if fuel_type in FUEL_TYPE_MAP:
-            mc = pd.to_numeric(row[1], errors='coerce')
-            tng = pd.to_numeric(row[2], errors='coerce')
+            mc = pd.to_numeric(row["MC"], errors="coerce")
+            tng = pd.to_numeric(row["TNG"], errors="coerce")
             dcr = mc - tng if pd.notnull(mc) and pd.notnull(tng) else None
             rows.append({
                 "Fuel Type": FUEL_TYPE_MAP[fuel_type][0],
