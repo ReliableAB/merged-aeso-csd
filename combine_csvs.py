@@ -47,7 +47,7 @@ def get_all_files(repo, path):
 def main():
     # Configuration
     SOURCE_REPO = "intermittentnrg/intermittent-aeso-sns-sqs"
-    YOUR_REPO = "your_username/merged-aeso-csd"  # Replace with your GitHub username
+    YOUR_REPO = "ReliableAB/merged-aeso-csd"  # Replace with your GitHub username
     YOUR_PAT = os.getenv("CSV_TOKEN")
     SOURCE_CSV_PATH = ""  # Root, since CSVs are in date subfolders
     OUTPUT_FILE = "data/monthly_data.csv"
