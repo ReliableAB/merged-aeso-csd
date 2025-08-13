@@ -1,0 +1,20 @@
+name: Combine CSVs
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: "0 0 * * *"  # Run daily at midnight UTC
+jobs:
+  combine-csvs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: pip install pandas requests PyGithub
+      - name: Run combine script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python combine_csvs.py
