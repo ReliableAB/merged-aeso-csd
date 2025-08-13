@@ -29,11 +29,11 @@ def process_csv(csv_url, file_name):
 
 def main():
     # Configuration
-    SOURCE_REPO = "second_account/repo_name"  # e.g., "user/public-repo"
-    YOUR_REPO = "your_account/your_repo_name"
-    YOUR_PAT = "your_personal_access_token"  # PAT with repo scope
-    SOURCE_CSV_PATH = "path/to/csv_folder"  # Path to CSVs in source repo
-    OUTPUT_FILE = "monthly_data.csv"
+    SOURCE_REPO = "https://github.com/intermittentnrg/intermittent-aeso-sns-sqs"  # e.g., "user/public-repo"
+    YOUR_REPO = "https://github.com/ReliableAB/merged-aeso-csd"
+    YOUR_PAT = os.getenv("CSV_TOKEN")  # PAT with repo scope
+    SOURCE_CSV_PATH = ""  #  Adjust if CSVs are in a different folder or "" if in root 
+    OUTPUT_FILE = "data/monthly_data.csv"
 
     # Initialize GitHub client
     g = Github(YOUR_PAT)
