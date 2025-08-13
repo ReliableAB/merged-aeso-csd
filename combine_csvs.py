@@ -28,19 +28,35 @@ def process_csv(csv_url, file_name):
         print(f"Error processing {file_name}: {e}")
         return None
 
+def get_all_files(repo, path):
+    """Recursively fetch all files from a repository path with pagination."""
+    files = []
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    while url:
+        response = requests.get(url)
+        response.raise_for_status()
+        items = response.json()
+        for item in items:
+            if item["type"] == "file" and item["name"].endswith(".csv"):
+                files.append(item)
+            elif item["type"] == "dir":
+                files.extend(get_all_files(repo, item["path"]))
+        url = response.links.get("next", {}).get("url")
+    return files
+
 def main():
     # Configuration
-    SOURCE_REPO = "intermittentnrg/intermittent-aeso-sns-sqs"  # e.g., "user/public-repo"
-    YOUR_REPO = "ReliableAB/merged-aeso-csd"
-    YOUR_PAT = os.getenv("CSV_TOKEN")  # PAT with repo scope
-    SOURCE_CSV_PATH = ""  #  Adjust if CSVs are in a different folder or "" if in root 
+    SOURCE_REPO = "intermittentnrg/intermittent-aeso-sns-sqs"
+    YOUR_REPO = "your_username/merged-aeso-csd"  # Replace with your GitHub username
+    YOUR_PAT = os.getenv("CSV_TOKEN")
+    SOURCE_CSV_PATH = ""  # Root, since CSVs are in date subfolders
     OUTPUT_FILE = "data/monthly_data.csv"
 
     # Initialize GitHub client
     g = Github(YOUR_PAT)
     your_repo = g.get_repo(YOUR_REPO)
 
-    # Load existing processed files from output CSV (if it exists)
+    # Load existing processed files (optional: comment out for testing)
     processed_files = set()
     try:
         output_content = your_repo.get_contents(OUTPUT_FILE)
@@ -52,21 +68,24 @@ def main():
         all_data = []
         print("No existing output file found.")
 
-    # Fetch CSV files from source repository
-    api_url = f"https://api.github.com/repos/{SOURCE_REPO}/contents/{SOURCE_CSV_PATH}"
-    response = requests.get(api_url)
-    response.raise_for_status()
-    files = response.json()
+    # Fetch CSV files recursively from source repository
+    files = get_all_files(SOURCE_REPO, SOURCE_CSV_PATH)
+    print(f"Found {len(files)} CSV files in {SOURCE_REPO}/{SOURCE_CSV_PATH}")
 
     # Process new CSV files
     new_files_found = False
     for file in files:
-        if isinstance(file, dict) and file["name"].endswith(".csv") and file["name"] != OUTPUT_FILE:
-            if file["name"] not in processed_files:
-                df = process_csv(file["download_url"], file["name"])
-                if df is not None:
-                    all_data.append(df)
-                    new_files_found = True
+        if file["name"] not in processed_files:
+            print(f"Processing {file['path']}")
+            df = process_csv(file["download_url"], file["path"])
+            if df is not None:
+                all_data.append(df)
+                new_files_found = True
+                # Save intermediate results to manage memory
+                if len(all_data) >= 100:  # Adjust batch size as needed
+                    temp_df = pd.concat(all_data, ignore_index=True)
+                    temp_df.to_csv(OUTPUT_FILE, index=False)
+                    all_data = [temp_df]
 
     if not new_files_found:
         print("No new CSV files found.")
@@ -75,12 +94,12 @@ def main():
     # Combine and save to local file
     final_df = pd.concat(all_data, ignore_index=True)
     final_df.to_csv(OUTPUT_FILE, index=False)
+    print(f"Saved combined data to local {OUTPUT_FILE}")
 
     # Upload to your repository
     with open(OUTPUT_FILE, "rb") as file:
         content = file.read()
         try:
-            # Update existing file or create new
             output_content = your_repo.get_contents(OUTPUT_FILE)
             your_repo.update_file(
                 path=OUTPUT_FILE,
@@ -89,6 +108,7 @@ def main():
                 sha=output_content.sha,
                 branch="main"
             )
+            print(f"✅ Updated {OUTPUT_FILE} in {YOUR_REPO}")
         except:
             your_repo.create_file(
                 path=OUTPUT_FILE,
@@ -96,7 +116,7 @@ def main():
                 content=content,
                 branch="main"
             )
-    print(f"✅ Updated {OUTPUT_FILE} in {YOUR_REPO}.")
+            print(f"✅ Created {OUTPUT_FILE} in {YOUR_REPO}")
 
 if __name__ == "__main__":
     main()
