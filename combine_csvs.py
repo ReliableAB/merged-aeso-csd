@@ -30,8 +30,8 @@ def process_csv(csv_url, file_name):
 
 def main():
     # Configuration
-    SOURCE_REPO = "https://github.com/intermittentnrg/intermittent-aeso-sns-sqs"  # e.g., "user/public-repo"
-    YOUR_REPO = "https://github.com/ReliableAB/merged-aeso-csd"
+    SOURCE_REPO = "intermittentnrg/intermittent-aeso-sns-sqs"  # e.g., "user/public-repo"
+    YOUR_REPO = "ReliableAB/merged-aeso-csd"
     YOUR_PAT = os.getenv("CSV_TOKEN")  # PAT with repo scope
     SOURCE_CSV_PATH = ""  #  Adjust if CSVs are in a different folder or "" if in root 
     OUTPUT_FILE = "data/monthly_data.csv"
