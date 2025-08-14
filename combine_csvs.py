@@ -50,7 +50,7 @@ def get_all_files(repo, path, token=None):
 def main():
     # Configuration
     SOURCE_REPO = "intermittentnrg/intermittent-aeso-sns-sqs"
-    YOUR_REPO = "your_username/merged-aeso-csd"  # Replace with your actual username
+    YOUR_REPO = "ReliableAB/merged-aeso-csd"  # Replace with your actual username
     YOUR_PAT = os.getenv("CSV_TOKEN")
     SOURCE_CSV_PATH = "2024-06-23"  # Test with one date folder
     OUTPUT_FILE = "data/monthly_data.csv"
