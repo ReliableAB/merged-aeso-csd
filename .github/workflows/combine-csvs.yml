@@ -1,8 +1,8 @@
 name: Combine CSVs
 on:
   workflow_dispatch:  # Manual trigger
-  schedule:
-    - cron: "0 0 * * *"  # Run daily at midnight UTC
+#  schedule:
+ #   - cron: "0 0 * * *"  # Run daily at midnight UTC
 jobs:
   combine-csvs:
     runs-on: ubuntu-latest
