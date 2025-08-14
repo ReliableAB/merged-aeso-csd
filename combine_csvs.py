@@ -4,6 +4,7 @@ import pandas as pd
 import io
 from github import Github
 import re
+import time
 
 def extract_last_update(content):
     """Extracts the 'Last Update' timestamp from CSV content."""
@@ -28,48 +29,51 @@ def process_csv(csv_url, file_name):
         print(f"Error processing {file_name}: {e}")
         return None
 
-def get_all_files(repo, path):
+def get_all_files(repo, path, token=None):
     """Recursively fetch all files from a repository path with pagination."""
     files = []
     url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    headers = {"Authorization": f"token {token}"} if token else {}
     while url:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         items = response.json()
         for item in items:
             if item["type"] == "file" and item["name"].endswith(".csv"):
                 files.append(item)
             elif item["type"] == "dir":
-                files.extend(get_all_files(repo, item["path"]))
+                files.extend(get_all_files(repo, item["path"], token))
         url = response.links.get("next", {}).get("url")
+        time.sleep(0.1)  # 100ms delay to avoid rate limits
     return files
 
 def main():
     # Configuration
     SOURCE_REPO = "intermittentnrg/intermittent-aeso-sns-sqs"
-    YOUR_REPO = "ReliableAB/merged-aeso-csd"  # Replace with your GitHub username
+    YOUR_REPO = "your_username/merged-aeso-csd"  # Replace with your actual username
     YOUR_PAT = os.getenv("CSV_TOKEN")
-    SOURCE_CSV_PATH = ""  # Root, since CSVs are in date subfolders
+    SOURCE_CSV_PATH = "2024-06-23"  # Test with one date folder
     OUTPUT_FILE = "data/monthly_data.csv"
 
     # Initialize GitHub client
     g = Github(YOUR_PAT)
     your_repo = g.get_repo(YOUR_REPO)
 
-    # Load existing processed files (optional: comment out for testing)
+    # Load existing processed files (commented out for testing)
     processed_files = set()
-    try:
-        output_content = your_repo.get_contents(OUTPUT_FILE)
-        existing_df = pd.read_csv(io.StringIO(output_content.decoded_content.decode("utf-8")))
-        processed_files = set(existing_df['SourceFile'].unique())
-        all_data = [existing_df]
-        print(f"Loaded {len(processed_files)} already processed files.")
-    except:
-        all_data = []
-        print("No existing output file found.")
+    # try:
+    #     output_content = your_repo.get_contents(OUTPUT_FILE)
+    #     existing_df = pd.read_csv(io.StringIO(output_content.decoded_content.decode("utf-8")))
+    #     processed_files = set(existing_df['SourceFile'].unique())
+    #     all_data = [existing_df]
+    #     print(f"Loaded {len(processed_files)} already processed files.")
+    # except:
+    #     all_data = []
+    all_data = []
+    print("No existing output file found or skipped for testing.")
 
     # Fetch CSV files recursively from source repository
-    files = get_all_files(SOURCE_REPO, SOURCE_CSV_PATH)
+    files = get_all_files(SOURCE_REPO, SOURCE_CSV_PATH, YOUR_PAT)
     print(f"Found {len(files)} CSV files in {SOURCE_REPO}/{SOURCE_CSV_PATH}")
 
     # Process new CSV files
@@ -82,7 +86,7 @@ def main():
                 all_data.append(df)
                 new_files_found = True
                 # Save intermediate results to manage memory
-                if len(all_data) >= 100:  # Adjust batch size as needed
+                if len(all_data) >= 50:  # Process in batches of 50
                     temp_df = pd.concat(all_data, ignore_index=True)
                     temp_df.to_csv(OUTPUT_FILE, index=False)
                     all_data = [temp_df]
